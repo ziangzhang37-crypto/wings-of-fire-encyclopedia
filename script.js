@@ -31,6 +31,7 @@ const WIKI_ART = Object.freeze({
   leaf: 'https://static.wikia.nocookie.net/wingsoffire/images/6/69/LeafTransparent.png/revision/latest?cb=20180623080022',
   generic: 'https://static.wikia.nocookie.net/wingsoffire/images/4/41/Wings_of_Fire_16_Full_Edited.jpg/revision/latest/scale-to-width-down/600'
 });
+const LOCAL_ART_FALLBACK = 'IceTransparent.webp';
 
 function wikiArtFor(tribe) {
   return WIKI_ART[tribe] || WIKI_ART.generic;
@@ -41,8 +42,8 @@ function renderWikiArt({ src, tribe, alt = 'Wings of Fire artwork', className = 
   const primary = src || fallback;
   const safeAlt = String(alt).replace(/"/g, '&quot;');
   const fallbackHandler = primary === fallback
-    ? ''
-    : ` onerror="this.onerror=null;this.src='${fallback}'"`;
+    ? ` onerror="this.onerror=null;this.src='${LOCAL_ART_FALLBACK}'"`
+    : ` onerror="if(this.dataset.fallback){this.onerror=null;this.src='${LOCAL_ART_FALLBACK}';}else{this.dataset.fallback='1';this.src='${fallback}';}"`;
   return `<img class="${className}" src="${primary}" alt="${safeAlt}" loading="lazy" decoding="async" referrerpolicy="no-referrer" style="${style}"${fallbackHandler}>`;
 }
 
@@ -2888,22 +2889,24 @@ function navigate(page, id) {
 
 // ===== Navigation Component =====
 function renderNav(activePage) {
+  const current = (page) => activePage === page || (page === 'characters' && activePage === 'character') || (page === 'books' && activePage === 'book');
+  const activeAttr = (page) => current(page) ? ' aria-current="page"' : '';
   return `
     <nav class="nav" id="mainNav">
       <a href="?page=home" class="nav__logo" onclick="event.preventDefault(); navigate('home')">
-        <img class="nav__logo-icon" src="https://static.wikia.nocookie.net/wingsoffire/images/4/41/Wings_of_Fire_16_Full_Edited.jpg/revision/latest/scale-to-width-down/600" alt="WoF logo" />
+        <img class="nav__logo-icon" src="https://static.wikia.nocookie.net/wingsoffire/images/4/41/Wings_of_Fire_16_Full_Edited.jpg/revision/latest/scale-to-width-down/600" alt="WoF logo" onerror="this.onerror=null;this.src='IceTransparent.webp'" />
         <span class="nav__logo-text">WINGS OF FIRE</span>
       </a>
       <button class="nav__hamburger" id="menuToggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navLinks"><span class="nav__hamburger-lines" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <ul class="nav__links" id="navLinks">
-        <li><a href="?page=home" class="nav__link ${activePage==='home'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('home')">Home</a></li>
-        <li><a href="?page=characters" class="nav__link ${activePage==='characters'||activePage==='character'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('characters')">Characters</a></li>
-        <li><a href="?page=books" class="nav__link ${activePage==='books'||activePage==='book'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('books')">Books</a></li>
-        <li><a href="?page=world" class="nav__link ${activePage==='world'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('world')">World</a></li>
-        <li><a href="?page=library" class="nav__link ${activePage==='library'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('library')">Library</a></li>
-        <li><a href="?page=news" class="nav__link ${activePage==='news'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('news')">News</a></li>
-        <li><a href="?page=comments" class="nav__link ${activePage==='comments'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('comments')">Comments</a></li>
-        <li><a href="?page=author" class="nav__link ${activePage==='author'?'nav__link--active':''}" onclick="event.preventDefault(); navigate('author')">Author</a></li>
+        <li><a href="?page=home" class="nav__link ${current('home')?'nav__link--active':''}"${activeAttr('home')} onclick="event.preventDefault(); navigate('home')">Home</a></li>
+        <li><a href="?page=characters" class="nav__link ${current('characters')?'nav__link--active':''}"${activeAttr('characters')} onclick="event.preventDefault(); navigate('characters')">Characters</a></li>
+        <li><a href="?page=books" class="nav__link ${current('books')?'nav__link--active':''}"${activeAttr('books')} onclick="event.preventDefault(); navigate('books')">Books</a></li>
+        <li><a href="?page=world" class="nav__link ${current('world')?'nav__link--active':''}"${activeAttr('world')} onclick="event.preventDefault(); navigate('world')">World</a></li>
+        <li><a href="?page=library" class="nav__link ${current('library')?'nav__link--active':''}"${activeAttr('library')} onclick="event.preventDefault(); navigate('library')">Library</a></li>
+        <li><a href="?page=news" class="nav__link ${current('news')?'nav__link--active':''}"${activeAttr('news')} onclick="event.preventDefault(); navigate('news')">News</a></li>
+        <li><a href="?page=comments" class="nav__link ${current('comments')?'nav__link--active':''}"${activeAttr('comments')} onclick="event.preventDefault(); navigate('comments')">Comments</a></li>
+        <li><a href="?page=author" class="nav__link ${current('author')?'nav__link--active':''}"${activeAttr('author')} onclick="event.preventDefault(); navigate('author')">Author</a></li>
       </ul>
       <button class="nav__search-btn" id="searchToggle" type="button" aria-label="Open search">
         ${renderWikiIcon('night', 'Search', 20)} <span>Search</span> <kbd>⌘K</kbd>
@@ -3433,7 +3436,7 @@ function renderCharacterPage(id) {
     </div>
 
     <div class="detail-content">
-      <div class="detail-content__section glass" class="detail-section-glass">
+      <div class="detail-content__section glass">
         <h3>About</h3>
         <p>${description}</p>
       </div>
@@ -3450,13 +3453,13 @@ function renderCharacterPage(id) {
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px;">
-        <div class="detail-content__section glass" class="detail-section-glass">
+        <div class="detail-content__section glass">
           <h3>Abilities</h3>
           <ul>
             ${abilities.map(a => `<li>${a}</li>`).join('') || '<li>Not listed</li>'}
           </ul>
         </div>
-        <div class="detail-content__section glass" class="detail-section-glass">
+        <div class="detail-content__section glass">
           <h3>Personality</h3>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
             ${personality.map(p => `<span style="padding:6px 14px;border-radius:10px;font-size:13px;background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.25);color:var(--accent-fire);">${p}</span>`).join('') || '<span>Not listed</span>'}
@@ -4306,29 +4309,29 @@ function renderTribePage(id) {
       </div>
 
       <div class="detail-content" style="padding-top:0;">
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">About</h3>
           <p style="color:var(--text-secondary);font-size:15px;line-height:1.8;">${t.description}</p>
         </div>
 
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">Physical Appearance</h3>
           <p class="detail-text">${t.appearance}</p>
         </div>
 
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">Habitat</h3>
           <p class="detail-text">${renderWikiIcon(t.id, t.name, 20)} ${t.habitat}</p>
         </div>
 
         <div class="detail-grid-2">
-          <div class="glass" class="detail-section-glass">
+          <div class="glass">
             <h3 class="detail-card-header">Abilities</h3>
             <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;">
               ${t.abilities.map(a => `<li style="color:var(--text-secondary);font-size:13px;padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid ${t.color};">${renderWikiIcon(t.id, t.name, 18)} ${a}</li>`).join('')}
             </ul>
           </div>
-          <div class="glass" class="detail-section-glass">
+          <div class="glass">
             <h3 class="detail-card-header">Weaknesses</h3>
             <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;">
               ${t.weaknesses.map(w => `<li class="detail-list-item detail-list-item--error">${renderWikiIcon(t.id, t.name, 18)} ${w}</li>`).join('')}
@@ -4336,19 +4339,19 @@ function renderTribePage(id) {
           </div>
         </div>
 
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">Personality & Culture</h3>
           <p style="color:var(--text-secondary);font-size:14px;line-height:1.8;margin-bottom:12px;"><strong style="color:var(--text-primary);">Personality:</strong> ${t.personality}</p>
           <p class="detail-text">${t.culture}</p>
         </div>
 
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">History</h3>
           <p class="detail-text">${t.history}</p>
         </div>
 
         ${t.notableDragons.length > 0 ? `
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 style="font-family:'Cinzel',serif;font-size:18px;margin-bottom:16px;color:var(--accent-fire);">Notable Dragons</h3>
           <div style="display:flex;flex-direction:column;gap:12px;">
             ${t.notableDragons.map(d => `
@@ -4363,7 +4366,7 @@ function renderTribePage(id) {
           </div>
         </div>` : ''}
 
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">Relationships & Politics</h3>
           ${t.relationships ? `
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
@@ -4382,7 +4385,7 @@ function renderTribePage(id) {
             </div>` : ''}
         </div>
 
-        <div class="glass" class="detail-section-glass">
+        <div class="glass">
           <h3 class="detail-card-header">Symbol</h3>
           <p class="detail-text">${t.symbol}</p>
         </div>
@@ -4460,29 +4463,38 @@ function render404() {
 function renderPage() {
   const { page, id } = getRoute();
   const app = document.getElementById('app');
+  if (!app) return;
 
-  const content = (() => {
-    switch(page) {
-      case 'home': return renderHomePage();
-      case 'characters': return renderCharactersPage();
-      case 'character': return renderCharacterPage(id);
-      case 'books': return renderBooksPage();
-      case 'book': return renderBookPage(id);
-      case 'tribe': return renderTribePage(id);
-      case 'arc': return renderArcPage(id);
-      case 'library': return renderLibraryPage();
-      case 'news': return renderNewsPage();
-      case 'comments': return renderCommentsPage();
-      case 'legal': return renderLegalPage();
-      case 'legend': return renderLegendPage(id);
-      case 'winglet': return renderWingletPage(id);
-      case 'world': return renderWorldPage();
-      case 'author': return renderAuthorPage();
-      default: return render404();
-    }
-  })();
+  try {
+    const content = (() => {
+      switch(page) {
+        case 'home': return renderHomePage();
+        case 'characters': return renderCharactersPage();
+        case 'character': return renderCharacterPage(id);
+        case 'books': return renderBooksPage();
+        case 'book': return renderBookPage(id);
+        case 'tribe': return renderTribePage(id);
+        case 'arc': return renderArcPage(id);
+        case 'library': return renderLibraryPage();
+        case 'news': return renderNewsPage();
+        case 'comments': return typeof window.renderCommentsPage === 'function' && window.renderCommentsPage !== renderCommentsPage ? window.renderCommentsPage() : renderCommentsPage();
+        case 'legal': return renderLegalPage();
+        case 'legend': return renderLegendPage(id);
+        case 'winglet': return renderWingletPage(id);
+        case 'world': return renderWorldPage();
+        case 'author': return renderAuthorPage();
+        default: return render404();
+      }
+    })();
 
-  app.innerHTML = renderBg() + renderNav(page) + `<main class="main">${content}</main>` + renderFooter() + renderSearchModal();
+    app.innerHTML = renderBg() + renderNav(page) + `<main class="main">${content}</main>` + renderFooter() + renderSearchModal();
+    app.setAttribute('aria-busy', 'false');
+  } catch (error) {
+    app.setAttribute('aria-busy', 'false');
+    app.innerHTML = `<main class="main"><div class="container" style="padding:100px 24px;text-align:center;"><h1>Wings of Fire</h1><p>We could not load this page. Please refresh and try again.</p></div></main>`;
+    console.error('Wings of Fire render error:', error);
+    return;
+  }
   setupEvents();
   const state = loadPageState();
   if (state && state.page === getRoute().page) {
@@ -4509,13 +4521,17 @@ function savePageState() {
     id: getRoute().id,
     scroll: window.scrollY
   };
-  localStorage.setItem('wof_state', JSON.stringify(state));
+  try { localStorage.setItem('wof_state', JSON.stringify(state)); } catch (error) { console.warn('Unable to save page state:', error); }
 }
 
 function loadPageState() {
-  const saved = localStorage.getItem('wof_state');
+  let saved;
+  try { saved = localStorage.getItem('wof_state'); } catch (error) { return null; }
   if (!saved) return null;
-  return JSON.parse(saved);
+  try { return JSON.parse(saved); } catch (error) {
+    try { localStorage.removeItem('wof_state'); } catch (removeError) { /* storage may be unavailable */ }
+    return null;
+  }
 }
 
 function initGlobalListeners() {
@@ -4525,7 +4541,17 @@ function initGlobalListeners() {
   // Keyboard shortcut — Cmd/Ctrl+K to open search, Escape to close
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
-    if (e.key === 'Escape') closeSearch();
+    if (e.key === 'Escape') {
+      closeSearch();
+      const menu = document.getElementById('navLinks');
+      const toggle = document.getElementById('menuToggle');
+      if (menu?.classList.contains('nav__links--open')) {
+        menu.classList.remove('nav__links--open');
+        toggle?.setAttribute('aria-expanded', 'false');
+        toggle?.setAttribute('aria-label', 'Open navigation menu');
+        toggle?.focus();
+      }
+    }
   });
 
   // Use an intersection sentinel instead of a scroll handler so the fixed
@@ -4564,6 +4590,11 @@ function setupEvents() {
     menuToggle.setAttribute('aria-expanded', String(isOpen));
     menuToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
   });
+  navLinks?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+    navLinks.classList.remove('nav__links--open');
+    menuToggle?.setAttribute('aria-expanded', 'false');
+    menuToggle?.setAttribute('aria-label', 'Open navigation menu');
+  }));
 }
 
 // ===== Scroll Animations (bidirectional fade-in/fade-out) =====
@@ -4617,15 +4648,16 @@ function loadTwitterWidget() {
   if (!container) return;
 
   // Create the embed element
-  if (container.innerHTML === "") { /* avoid clearing if already loaded */ }
-  const a = document.createElement('a');
-  a.className = 'twitter-timeline';
-  a.setAttribute('data-height', '500');
-  a.setAttribute('data-theme', 'dark');
-  a.setAttribute('data-chrome', 'nofooter noborders transparent');
-  a.href = 'https://twitter.com/WingsOfFireNews';
-  a.textContent = 'Tweets by WingsOfFireNews';
-  container.appendChild(a);
+  if (!container.querySelector('.twitter-timeline')) {
+    const a = document.createElement('a');
+    a.className = 'twitter-timeline';
+    a.setAttribute('data-height', '500');
+    a.setAttribute('data-theme', 'dark');
+    a.setAttribute('data-chrome', 'nofooter noborders transparent');
+    a.href = 'https://twitter.com/WingsOfFireNews';
+    a.textContent = 'Tweets by WingsOfFireNews';
+    container.appendChild(a);
+  }
 
   // Load Twitter widget script if not already loaded
   if (!document.getElementById('twitter-wjs')) {
@@ -4736,6 +4768,22 @@ function initBackToTop() {
   }
 }
 
+// Public hooks used by the optional backend integration.
+window.getRoute = getRoute;
+window.renderPage = renderPage;
+window.renderCommentsPage = renderCommentsPage;
+
+function loadOptionalBackend() {
+  if (document.getElementById('zion-backend-script')) return;
+  const backend = document.createElement('script');
+  backend.id = 'zion-backend-script';
+  backend.src = 'zion-backend.js';
+  backend.async = true;
+  backend.onload = () => window.renderPage();
+  backend.onerror = () => console.warn('Optional Zion backend could not be loaded.');
+  document.body.appendChild(backend);
+}
+
 // ===== Init =====
 window.addEventListener('popstate', renderPage);
 window.addEventListener('beforeunload', savePageState);
@@ -4743,6 +4791,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGlobalListeners();
   renderPage();
   initBackToTop();
+  loadOptionalBackend();
   // SEO: update title and meta per route
   const titles = { home: 'Wings of Fire — Ultimate Dragon Fantasy Encyclopedia | Characters, Books & World', characters: 'Characters — Wings of Fire | Meet All 18 Dragon Heroes', books: 'All Wings of Fire Books — Series, Legends & Graphic Novels', world: 'World of Wings of Fire — Pyrrhia & Pantala', library: 'Library — Wings of Fire | Fan-Created Content', news: 'Wings of Fire News — Latest Updates & Releases', comments: 'Community — Wings of Fire | Fan Comments & Discussion', legal: 'Legal — Wings of Fire', author: 'Author — Wings of Fire | Tui T. Sutherland' };
   const metaDescs = { home: 'Explore 10 dragon tribes, 16+ novels, and four epic arcs.', characters: 'All 18 protagonists across four story arcs.', books: 'Every Wings of Fire book — main series, legends, winglets, graphic novels.', world: 'The world of Pyrrhia and Pantala — two continents, ten tribes.' };
@@ -4752,9 +4801,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.documentElement.dataset.originalTitle = document.title;
   const meta = document.querySelector('meta[name="description"]');
   if (meta) meta.setAttribute('content', metaDescs[page] || metaDescs.home);
+  const canonical = document.querySelector('link[rel="canonical"]');
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.search = '';
+  cleanUrl.hash = '';
+  if (canonical) canonical.href = cleanUrl.href;
+  document.querySelector('meta[property="og:url"]')?.setAttribute('content', cleanUrl.href);
 });
 
-  
 
   (function() {
     var WINGS_HOOKS = [
@@ -4789,4 +4843,3 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   })();
-  

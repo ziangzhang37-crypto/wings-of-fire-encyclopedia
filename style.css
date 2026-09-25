@@ -465,6 +465,12 @@ body {
 #staticFooter h4 { font-family: 'Cinzel', serif; font-size: 14px; margin-bottom: 12px; color: var(--accent-fire); }
 #staticFooter p { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
 #staticFooter a { color: var(--accent-primary); text-decoration: none; font-weight: 600; }
+.noscript-message { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 120px 24px 80px; text-align: center; }
+.noscript-message h1 { margin-bottom: 16px; font-size: clamp(28px, 5vw, 48px); }
+.noscript-message p { color: var(--text-secondary); margin-top: 10px; }
+@media (max-width: 768px) {
+  #staticFooter .staticFooter__grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+}
 .footer { padding: 24px 24px; border-top: 2px solid var(--border-strong, #9CA3AF); margin-top: 0; background: var(--bg-surface); }
 .footer p { color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
 .footer a { color: var(--accent-primary); text-decoration: none; font-weight: 600; }
